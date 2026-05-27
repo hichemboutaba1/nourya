@@ -28,9 +28,23 @@ body{background:var(--c);color:var(--txt);font-family:var(--fb);overflow-x:hidde
 ::-webkit-scrollbar-track{background:var(--n2);}
 ::-webkit-scrollbar-thumb{background:linear-gradient(var(--g),var(--rosed));}
 
-/* Curseur par défaut du système sur tous les éléments */
-*{cursor:auto;}
-a,button,[role="button"]{cursor:pointer;}
+/* ─── CURSEUR SYSTÈME (flèche native) ─── */
+*,*::before,*::after{cursor:default!important;}
+a,button,
+[role="button"],[onclick],
+.fbtn,.btn-g,.btn-o,
+.pc-add,.pc-fav,.pc-detail-link,
+.cof-btn,.diy-btn,
+.qbtn,.ci-del,
+.nico,.nbtn,
+.hamburger,
+.mcls,.mcls *,
+.faq-q,
+.fmt-btn,.pd-fmt-btn,
+.track-btn,.nl-btn,
+.submit-btn,
+.cart-drw-close,
+.soc{cursor:pointer!important;}
 
 /* ─── SCROLL PROGRESS ─── */
 #scroll-progress{
