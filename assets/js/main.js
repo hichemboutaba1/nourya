@@ -7,36 +7,7 @@ window.addEventListener('load', () => {
   setTimeout(() => document.getElementById('loader').classList.add('gone'), 1800);
 });
 
-// ─── CURSOR ───
-const $c = document.getElementById('cur');
-const $r = document.getElementById('cur-r');
-let mx = 0, my = 0, rx = 0, ry = 0;
-
-document.addEventListener('mousemove', e => {
-  mx = e.clientX;
-  my = e.clientY;
-  $c.style.left = mx + 'px';
-  $c.style.top = my + 'px';
-});
-
-// Lerp adaptatif : rapide quand loin, doux quand proche
-(function loop() {
-  const dx = mx - rx, dy = my - ry;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  const lerp = Math.min(0.08 + dist * 0.003, 0.22);
-  rx += dx * lerp;
-  ry += dy * lerp;
-  $r.style.left = rx + 'px';
-  $r.style.top = ry + 'px';
-  requestAnimationFrame(loop);
-})();
-
-document.addEventListener('mousedown', () => $c.style.transform = 'translate(-50%,-50%) scale(2)');
-document.addEventListener('mouseup', () => $c.style.transform = 'translate(-50%,-50%) scale(1)');
-document.querySelectorAll('a,button').forEach(el => {
-  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
-  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
-});
+// Curseur natif du système — pas de curseur custom
 
 // ─── NAV & SCROLL PROGRESS ───
 const $nav = document.getElementById('nav');
