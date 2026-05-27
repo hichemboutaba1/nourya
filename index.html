@@ -141,57 +141,20 @@
       </div>
     </div>
     <div class="hero-right">
-      <div class="hero-visual">
-        <div class="hero-bg-panel"></div>
-        <img src="https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?w=800&q=75" alt="Soins naturels NOURYA" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.18;">
-        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,5,0,.85),rgba(20,8,0,.6));pointer-events:none;z-index:1"></div>
-        <div class="hero-big-n" style="z-index:2">N</div>
-        <div class="hlm" style="z-index:3">
-          <div class="hlm-inner">
-            <svg width="92" height="92" viewBox="0 0 92 92" fill="none">
-              <circle cx="46" cy="46" r="44" stroke="rgba(201,147,58,.2)" stroke-width="1" stroke-dasharray="4 3"/>
-              <circle cx="46" cy="46" r="31" fill="rgba(20,8,0,.85)" stroke="rgba(233,197,192,.32)" stroke-width="1.2"/>
-              <path d="M46 17C46 17,63 29,63 44C63 58,54 67,46 72C38 67,29 58,29 44C29 29,46 17,46 17Z" fill="none" stroke="rgba(201,147,58,.42)" stroke-width="1.2"/>
-              <circle cx="46" cy="44" r="5" fill="rgba(233,197,192,.85)"/>
-              <circle cx="46" cy="44" r="2" fill="rgba(20,8,0,.9)"/>
-            </svg>
+      <div class="hero-showcase" id="heroShowcase">
+        <div class="hs-slides" id="hsSlides"></div>
+        <div class="hs-overlay"></div>
+        <div class="hs-content" id="hsContent">
+          <div class="hs-badge" id="hsBadge"></div>
+          <div class="hs-name" id="hsName"></div>
+          <div class="hs-desc" id="hsDesc"></div>
+          <div class="hs-row">
+            <div class="hs-price" id="hsPrice"></div>
+            <button class="hs-add" id="hsAdd">+ Panier</button>
           </div>
-          <div class="hlm-lbl">NOURYA</div>
-          <div class="hlm-ar">نورية</div>
         </div>
-        <!-- Floating cards -->
-        <div class="fcard f1" style="z-index:4">
-          <div class="fcard-top">
-            <svg class="fcard-svg" viewBox="0 0 38 38" fill="none"><ellipse cx="19" cy="29" rx="6" ry="7" fill="rgba(201,147,58,.12)" stroke="rgba(201,147,58,.45)" stroke-width="1"/><path d="M19 22C19 22,13 14,13 9C13 4,16 2,19 2C22 2,25 4,25 9C25 14,19 22,19 22Z" fill="rgba(201,147,58,.1)" stroke="rgba(201,147,58,.55)" stroke-width="1.2"/><path d="M19 7Q21 11,19 15Q17 11,19 7Z" fill="rgba(201,147,58,.4)"/></svg>
-            <div><div class="fcard-name">Figue de Barbarie</div><div class="fcard-sub">30 ml · Huile précieuse</div></div>
-          </div>
-          <div class="fcard-bar"><div class="fcard-bar-fill" style="--w:88%"></div></div>
-          <div class="fcard-origin">Batna · Tlemcen · Algérie</div>
-        </div>
-        <div class="fcard f2" style="z-index:4">
-          <div class="fcard-top">
-            <svg class="fcard-svg" viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="12" fill="rgba(233,197,192,.08)" stroke="rgba(233,197,192,.4)" stroke-width="1"/><path d="M19 9Q23 14,21 19Q25 17,27 21Q23 25,19 23Q15 25,11 21Q13 17,17 19Q15 14,19 9Z" fill="rgba(233,197,192,.28)" stroke="rgba(233,197,192,.5)" stroke-width=".6"/><circle cx="19" cy="18" r="3" fill="rgba(233,197,192,.7)"/></svg>
-            <div><div class="fcard-name">Fleur d'Oranger</div><div class="fcard-sub">200 ml · Hydrolat</div></div>
-          </div>
-          <div class="fcard-bar"><div class="fcard-bar-fill" style="--w:74%"></div></div>
-          <div class="fcard-origin">Blida · Algérie</div>
-        </div>
-        <div class="fcard f3" style="z-index:4">
-          <div class="fcard-top">
-            <svg class="fcard-svg" viewBox="0 0 38 38" fill="none"><rect x="8" y="23" width="22" height="9" rx="2" fill="rgba(201,147,58,.1)" stroke="rgba(201,147,58,.38)" stroke-width="1"/><path d="M12 23L14 10L19 8L24 10L26 23Z" fill="rgba(201,147,58,.08)" stroke="rgba(201,147,58,.45)" stroke-width="1"/><circle cx="19" cy="17" r="4" fill="rgba(201,147,58,.22)" stroke="rgba(201,147,58,.55)" stroke-width="1"/></svg>
-            <div><div class="fcard-name">Habba Sawda</div><div class="fcard-sub">100 ml · Nigelle</div></div>
-          </div>
-          <div class="fcard-bar"><div class="fcard-bar-fill" style="--w:92%"></div></div>
-          <div class="fcard-origin">Jijel · Algérie</div>
-        </div>
-        <div class="fcard f4" style="z-index:4">
-          <div class="fcard-top">
-            <svg class="fcard-svg" viewBox="0 0 38 38" fill="none"><polygon points="19,4 22,13,32,13,24,19,27,28,19,23,11,28,14,19,6,13,16,13" fill="rgba(201,147,58,.1)" stroke="rgba(201,147,58,.45)" stroke-width="1" stroke-linejoin="round"/><polygon points="19,10 21,15,26,15,22,18,24,23,19,20,14,23,16,18,12,15,17,15" fill="rgba(201,147,58,.35)"/></svg>
-            <div><div class="fcard-name">Safran algérien</div><div class="fcard-sub">20 ml · Sérum premium</div></div>
-          </div>
-          <div class="fcard-bar"><div class="fcard-bar-fill" style="--w:60%"></div></div>
-          <div class="fcard-origin">Tipaza · Algérie</div>
-        </div>
+        <div class="hs-dots" id="hsDots"></div>
+        <div class="hs-timer"><div class="hs-timer-fill" id="hsTimer"></div></div>
       </div>
     </div>
   </div>

@@ -949,10 +949,81 @@ function observeAnim() {
   document.querySelectorAll('[data-count]').forEach(el => obs.observe(el));
 }
 
+// ─── HERO SHOWCASE ───
+function initHeroShowcase(){
+  const SHOWCASE = PRODUCTS.slice(0,6);
+  const slidesEl = document.getElementById('hsSlides');
+  const dotsEl   = document.getElementById('hsDots');
+  const content  = document.getElementById('hsContent');
+  const badgeEl  = document.getElementById('hsBadge');
+  const nameEl   = document.getElementById('hsName');
+  const descEl   = document.getElementById('hsDesc');
+  const priceEl  = document.getElementById('hsPrice');
+  const addBtn   = document.getElementById('hsAdd');
+  const timerEl  = document.getElementById('hsTimer');
+  if(!slidesEl) return;
+
+  SHOWCASE.forEach((p,i) => {
+    const s = document.createElement('div');
+    s.className = 'hs-slide' + (i===0?' hs-active':'');
+    s.innerHTML = `<img src="${p.img}" alt="${p.name}" loading="${i===0?'eager':'lazy'}">`;
+    slidesEl.appendChild(s);
+
+    const d = document.createElement('button');
+    d.className = 'hs-dot' + (i===0?' hs-dot-active':'');
+    d.setAttribute('aria-label', p.name);
+    d.addEventListener('click', ()=>goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  let current = 0;
+  let timer;
+
+  function setContent(p){
+    content.classList.remove('hs-in');
+    void content.offsetWidth;
+    badgeEl.textContent = p.badge || p.tags[0] || '';
+    nameEl.textContent  = p.name;
+    descEl.textContent  = p.desc;
+    priceEl.textContent = p.formats[0].price.toLocaleString('fr-DZ') + ' DA';
+    addBtn.onclick = () => addToCart(p.id, 0);
+    requestAnimationFrame(() => content.classList.add('hs-in'));
+  }
+
+  function goTo(idx){
+    const slides = slidesEl.querySelectorAll('.hs-slide');
+    const dots   = dotsEl.querySelectorAll('.hs-dot');
+    slides[current].classList.remove('hs-active');
+    dots[current].classList.remove('hs-dot-active');
+    current = (idx + SHOWCASE.length) % SHOWCASE.length;
+    slides[current].classList.add('hs-active');
+    dots[current].classList.add('hs-dot-active');
+    setContent(SHOWCASE[current]);
+    timerEl.classList.remove('hs-run');
+    void timerEl.offsetWidth;
+    requestAnimationFrame(() => timerEl.classList.add('hs-run'));
+  }
+
+  function startAuto(){ timer = setInterval(() => goTo(current+1), 3000); }
+  function stopAuto(){ clearInterval(timer); }
+
+  setContent(SHOWCASE[0]);
+  requestAnimationFrame(() => {
+    content.classList.add('hs-in');
+    timerEl.classList.add('hs-run');
+  });
+  startAuto();
+
+  const showcase = document.getElementById('heroShowcase');
+  showcase.addEventListener('mouseenter', stopAuto);
+  showcase.addEventListener('mouseleave', () => { goTo(current+1); startAuto(); });
+}
+
 // ─── INIT ───
 buildFilters();
 buildProds();
 observeAnim();
 initCardTilt();
+initHeroShowcase();
 renderCart();
 updateBadge();
