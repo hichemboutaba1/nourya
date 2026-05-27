@@ -454,7 +454,11 @@ document.getElementById('cof-grid').innerHTML = COFFRETS.map(c => `
     <div class="cof-img-ov"></div>
     <div class="cof-ribbon">${c.ribbon}</div>
     <div style="position:absolute;bottom:16px;left:0;right:0;text-align:center;z-index:3">
-      <div style="font-family:var(--fa);font-size:18px;color:rgba(233,197,192,.6)">${c.ar}</div>
+      <div style="font-family:var(--fa);font-size:18px;color:rgba(222,184,179,.6)">${c.ar}</div>
+    </div>
+    <div class="cof-hover-panel">
+      <div class="cof-hover-title">Contenu du coffret</div>
+      <div class="cof-hover-items">${c.incl.map(i=>`<div class="cof-hover-item">${i}</div>`).join('')}</div>
     </div>
   </div>
   <div class="cof-body">
@@ -945,7 +949,7 @@ function observeAnim() {
   }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
 
   document.querySelectorAll('.fu:not(.vis), .fi-a:not(.vis), .fls:not(.vis)').forEach(el => obs.observe(el));
-  // Observer aussi les stats pour le compteur
+  document.querySelectorAll('.rstep:not(.vis)').forEach(el => obs.observe(el));
   document.querySelectorAll('[data-count]').forEach(el => obs.observe(el));
 }
 
