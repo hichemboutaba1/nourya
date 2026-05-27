@@ -1019,6 +1019,55 @@ function initHeroShowcase(){
   showcase.addEventListener('mouseleave', () => { goTo(current+1); startAuto(); });
 }
 
+// ─── SUPABASE — chargement des produits admin ───
+const _SB_URL = 'https://wnwirmlvgjfzymixswsy.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indud2lybWx2Z2pmenltaXhzd3N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzcxMzksImV4cCI6MjA4OTQ1MzEzOX0.wxrbK6_ny7j3wI2l-bvIy9ljYqj_xbiyHncB5QJCnSc';
+
+async function loadAdminProducts(){
+  try{
+    const res = await fetch(
+      `${_SB_URL}/rest/v1/nourya_products?visible=eq.true&order=created_at.asc&select=*`,
+      { headers:{ 'apikey':_SB_KEY, 'Authorization':'Bearer '+_SB_KEY } }
+    );
+    if(!res.ok) return;
+    const rows = await res.json();
+    if(!rows || !rows.length) return;
+
+    let nextId = Math.max(...PRODUCTS.map(p=>p.id), 100) + 1;
+    rows.forEach(r => {
+      if(PRODUCTS.find(p=>p._sbId===r.id)) return;
+      const formats = [];
+      if(r.price_1) formats.push({lbl:r.label_1||'Format 1', qty:r.label_1||'', price:r.price_1});
+      if(r.price_2) formats.push({lbl:r.label_2||'Format 2', qty:r.label_2||'', price:r.price_2});
+      if(!formats.length) return;
+      PRODUCTS.push({
+        id:       nextId++,
+        _sbId:    r.id,
+        name:     r.name,
+        ar:       r.name_ar || '',
+        cat:      r.category || 'visage',
+        emoji:    '✦',
+        formats,
+        badge:    r.badge || null,
+        btype:    '',
+        img:      r.image_url,
+        peau:     '',
+        desc:     r.description,
+        long:     r.long_desc || r.description,
+        tags:     r.tags || [],
+        benefits: [],
+        usage:    [],
+        ingr:     [],
+      });
+    });
+    selectedFormats && rows.forEach((_,i)=>{ const p=PRODUCTS[PRODUCTS.length-rows.length+i]; if(p) selectedFormats[p.id]=0; });
+    buildFilters();
+    buildProds();
+  } catch(e){
+    // silently fail — static products remain
+  }
+}
+
 // ─── INIT ───
 buildFilters();
 buildProds();
@@ -1027,3 +1076,4 @@ initCardTilt();
 initHeroShowcase();
 renderCart();
 updateBadge();
+loadAdminProducts();
