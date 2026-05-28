@@ -641,7 +641,7 @@ function renderTable(){
 
   // Section 2 — produits personnalisés
   const dynCount = dynamicProducts.length;
-  html += `<tr class="section-divider"><td colspan="7">Produits personnalisés — ${dynCount ? dynCount + ' produit' + (dynCount>1?'s':'') : 'aucun pour l'instant'}</td></tr>`;
+  html += `<tr class="section-divider"><td colspan="7">Produits personnalisés — ${dynCount ? dynCount + ' produit' + (dynCount>1?'s':'') : "aucun pour l'instant"}</td></tr>`;
   if(dynCount){
     html += dynamicProducts.map(p => `<tr>
       <td>
