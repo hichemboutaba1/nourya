@@ -1029,42 +1029,58 @@ const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
 
 async function loadAdminProducts(){
   try{
-    const res = await fetch(
-      `${_SB_URL}/rest/v1/nourya_products?visible=eq.true&order=created_at.asc&select=*`,
-      { headers:{ 'apikey':_SB_KEY, 'Authorization':'Bearer '+_SB_KEY } }
-    );
-    if(!res.ok) return;
-    const rows = await res.json();
-    if(!rows || !rows.length) return;
+    const [hiddenRes, prodRes] = await Promise.all([
+      fetch(`${_SB_URL}/rest/v1/nourya_hidden_products?select=product_id`,
+        { headers:{ 'apikey':_SB_KEY, 'Authorization':'Bearer '+_SB_KEY } }),
+      fetch(`${_SB_URL}/rest/v1/nourya_products?visible=eq.true&order=created_at.asc&select=*`,
+        { headers:{ 'apikey':_SB_KEY, 'Authorization':'Bearer '+_SB_KEY } })
+    ]);
 
-    let nextId = Math.max(...PRODUCTS.map(p=>p.id), 100) + 1;
-    rows.forEach(r => {
-      if(PRODUCTS.find(p=>p._sbId===r.id)) return;
-      const formats = [];
-      if(r.price_1) formats.push({lbl:r.label_1||'Format 1', qty:r.label_1||'', price:r.price_1});
-      if(r.price_2) formats.push({lbl:r.label_2||'Format 2', qty:r.label_2||'', price:r.price_2});
-      if(!formats.length) return;
-      PRODUCTS.push({
-        id:       nextId++,
-        _sbId:    r.id,
-        name:     r.name,
-        ar:       r.name_ar || '',
-        cat:      r.category || 'visage',
-        emoji:    '✦',
-        formats,
-        badge:    r.badge || null,
-        btype:    '',
-        img:      r.image_url,
-        peau:     '',
-        desc:     r.description,
-        long:     r.long_desc || r.description,
-        tags:     r.tags || [],
-        benefits: [],
-        usage:    [],
-        ingr:     [],
+    // Apply hidden IDs — splice static products out of PRODUCTS
+    if(hiddenRes.ok){
+      const hiddenRows = await hiddenRes.json();
+      const hiddenSet = new Set((hiddenRows||[]).map(r => r.product_id));
+      if(hiddenSet.size){
+        for(let i = PRODUCTS.length - 1; i >= 0; i--){
+          if(PRODUCTS[i].id >= 1 && PRODUCTS[i].id <= 14 && hiddenSet.has(PRODUCTS[i].id)){
+            PRODUCTS.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    if(!prodRes.ok){ buildFilters(); buildProds(); return; }
+    const rows = await prodRes.json();
+    if(rows && rows.length){
+      let nextId = Math.max(...PRODUCTS.map(p=>p.id), 100) + 1;
+      rows.forEach(r => {
+        if(PRODUCTS.find(p=>p._sbId===r.id)) return;
+        const formats = [];
+        if(r.price_1) formats.push({lbl:r.label_1||'Format 1', qty:r.label_1||'', price:r.price_1});
+        if(r.price_2) formats.push({lbl:r.label_2||'Format 2', qty:r.label_2||'', price:r.price_2});
+        if(!formats.length) return;
+        PRODUCTS.push({
+          id:       nextId++,
+          _sbId:    r.id,
+          name:     r.name,
+          ar:       r.name_ar || '',
+          cat:      r.category || 'visage',
+          emoji:    '✦',
+          formats,
+          badge:    r.badge || null,
+          btype:    '',
+          img:      r.image_url,
+          peau:     '',
+          desc:     r.description,
+          long:     r.long_desc || r.description,
+          tags:     r.tags || [],
+          benefits: [],
+          usage:    [],
+          ingr:     [],
+        });
       });
-    });
-    selectedFormats && rows.forEach((_,i)=>{ const p=PRODUCTS[PRODUCTS.length-rows.length+i]; if(p) selectedFormats[p.id]=0; });
+      selectedFormats && rows.forEach((_,i)=>{ const p=PRODUCTS[PRODUCTS.length-rows.length+i]; if(p) selectedFormats[p.id]=0; });
+    }
     buildFilters();
     buildProds();
   } catch(e){

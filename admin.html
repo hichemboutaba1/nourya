@@ -328,6 +328,16 @@ body{background:var(--n1);color:var(--c);font-family:var(--fb);min-height:100vh;
   letter-spacing:.15em;text-transform:uppercase;transition:opacity .2s;
 }
 .del-yes:hover{opacity:.85;}
+
+/* ── SECTION DIVIDER ── */
+.section-divider td{
+  background:rgba(196,164,92,.04);
+  padding:8px 16px;
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--g);opacity:.65;
+  border-top:1px solid rgba(196,164,92,.1);
+  border-bottom:1px solid rgba(196,164,92,.06);
+}
 </style>
 </head>
 <body>
@@ -361,7 +371,7 @@ body{background:var(--n1);color:var(--c);font-family:var(--fb);min-height:100vh;
     <div class="stats-bar">
       <div class="stat-card">
         <div class="stat-num" id="stat-total">—</div>
-        <div class="stat-lbl">Produits ajoutés</div>
+        <div class="stat-lbl">Total produits</div>
       </div>
       <div class="stat-card">
         <div class="stat-num" id="stat-visible">—</div>
@@ -512,14 +522,34 @@ body{background:var(--n1);color:var(--c);font-family:var(--fb);min-height:100vh;
 const SB_URL  = 'https://wnwirmlvgjfzymixswsy.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indud2lybWx2Z2pmenltaXhzd3N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NzcxMzksImV4cCI6MjA4OTQ1MzEzOX0.wxrbK6_ny7j3wI2l-bvIy9ljYqj_xbiyHncB5QJCnSc';
 const TABLE   = 'nourya_products';
+const HIDDEN_TABLE = 'nourya_hidden_products';
 
 // ── MOT DE PASSE (SHA-256 de "Nourya@2026") ──
 const PWD_HASH = '4c28cac32072e417bd93d1ae178257e63aca1ed12810087a16612ab317533f68';
 
+// ── PRODUITS DU CATALOGUE (statiques) ──
+const STATIC_PRODUCTS = [
+  {id:1,  name:"Sérum Figue de Barbarie",          cat:"visage",  badge:"Best-seller", img:"https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&q=80"},
+  {id:2,  name:"Huile Nigelle Anti-Chute",          cat:"cheveux", badge:"Nouveau",     img:"https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&q=80"},
+  {id:3,  name:"Huile d'Argan Pure",               cat:"cheveux", badge:null,          img:"https://images.unsplash.com/photo-1631125915902-d8abe9225ff2?w=600&q=80"},
+  {id:4,  name:"Masque Ghassoul Curcuma",           cat:"visage",  badge:null,          img:"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80"},
+  {id:5,  name:"Masque Miel & Argile Anti-Acné",   cat:"visage",  badge:null,          img:"https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600&q=80"},
+  {id:6,  name:"Masque Capillaire Ghassoul-Hibiscus",cat:"cheveux",badge:null,          img:"https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=600&q=80"},
+  {id:7,  name:"Gommage Sucre & Argan",             cat:"corps",   badge:null,          img:"https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&q=80"},
+  {id:8,  name:"Beurre Leave-In Karité",            cat:"cheveux", badge:null,          img:"https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=600&q=80"},
+  {id:9,  name:"Beurre Corps Karité-Rose",          cat:"corps",   badge:null,          img:"https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?w=600&q=80"},
+  {id:10, name:"Sérum Nuit Saffron Glow",           cat:"visage",  badge:"Premium",     img:"https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=600&q=80"},
+  {id:11, name:"Savon Noir Beldi",                  cat:"corps",   badge:null,          img:"https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?w=600&q=80"},
+  {id:12, name:"Eau de Fleur d'Oranger",           cat:"visage",  badge:null,          img:"https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600&q=80"},
+  {id:13, name:"Ghassoul Premium en Poudre",        cat:"corps",   badge:null,          img:"https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=600&q=80"},
+  {id:14, name:"Huile de Ricin Fortifiante",        cat:"cheveux", badge:null,          img:"https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&q=80"},
+];
+
 // ── STATE ──
-let products  = [];
+let dynamicProducts = [];
+let hiddenIds = new Set();
 let editingId = null;
-let tags      = [];
+let tags = [];
 
 // ── AUTH ──
 async function tryLogin(){
@@ -530,7 +560,7 @@ async function tryLogin(){
     sessionStorage.setItem('nourya_admin','1');
     document.getElementById('login-screen').classList.add('gone');
     document.getElementById('app').classList.add('show');
-    loadProducts();
+    loadAll();
   } else {
     const e = document.getElementById('login-err');
     e.classList.add('show');
@@ -567,11 +597,15 @@ async function sbFetch(path, opts={}){
   return text ? JSON.parse(text) : null;
 }
 
-// ── LOAD ──
-async function loadProducts(){
+// ── LOAD ALL ──
+async function loadAll(){
   try{
-    const data = await sbFetch(`${TABLE}?order=created_at.desc&select=*`, {prefer:'return=representation'});
-    products = data || [];
+    const [hiddenData, dynamicData] = await Promise.all([
+      sbFetch(HIDDEN_TABLE + '?select=product_id', {prefer:'return=representation'}),
+      sbFetch(TABLE + '?order=created_at.desc&select=*', {prefer:'return=representation'})
+    ]);
+    hiddenIds = new Set((hiddenData||[]).map(r => r.product_id));
+    dynamicProducts = dynamicData || [];
     renderTable();
     renderStats();
   } catch(e){
@@ -582,19 +616,36 @@ async function loadProducts(){
 // ── RENDER TABLE ──
 function renderTable(){
   const tbody = document.getElementById('prod-tbody');
-  const empty = document.getElementById('empty-state');
-  if(!products.length){
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-  tbody.innerHTML = products.map(p => `
-    <tr>
+  document.getElementById('empty-state').style.display = 'none';
+  let html = '';
+
+  // Section 1 — catalogue statique
+  html += `<tr class="section-divider"><td colspan="7">Catalogue de base — ${STATIC_PRODUCTS.length} produits intégrés</td></tr>`;
+  html += STATIC_PRODUCTS.map(p => {
+    const hidden = hiddenIds.has(p.id);
+    return `<tr>
       <td>
-        ${p.image_url
-          ? `<img class="prod-img-thumb" src="${esc(p.image_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-          : ''}
+        <img class="prod-img-thumb" src="${esc(p.img)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="prod-img-placeholder" style="display:none">⬚</div>
+      </td>
+      <td>
+        <div class="prod-name-cell">${esc(p.name)}</div>
+        ${p.badge ? `<span class="badge-pill">${esc(p.badge)}</span>` : ''}
+      </td>
+      <td><span class="cat-tag">${catLabel(p.cat)}</span></td>
+      <td colspan="2" style="font-size:11px;color:var(--c);opacity:.2;letter-spacing:.08em;">Catalogue fixe</td>
+      <td><button class="vis-toggle ${hidden?'':'on'}" onclick="toggleStatic(${p.id},${hidden})" title="${hidden?'Afficher sur le site':'Masquer du site'}"></button></td>
+      <td><span style="font-size:11px;color:${hidden?'var(--rosed)':'rgba(196,164,92,.5)'};">${hidden?'Masqué':'Visible'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Section 2 — produits personnalisés
+  const dynCount = dynamicProducts.length;
+  html += `<tr class="section-divider"><td colspan="7">Produits personnalisés — ${dynCount ? dynCount + ' produit' + (dynCount>1?'s':'') : 'aucun pour l'instant'}</td></tr>`;
+  if(dynCount){
+    html += dynamicProducts.map(p => `<tr>
+      <td>
+        ${p.image_url ? `<img class="prod-img-thumb" src="${esc(p.image_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
         <div class="prod-img-placeholder" style="display:${p.image_url?'none':'flex'}">⬚</div>
       </td>
       <td>
@@ -607,31 +658,48 @@ function renderTable(){
         ${p.label_1 ? `<span style="font-size:11px;color:var(--c);opacity:.4">${esc(p.label_1)}</span><br>` : ''}
         ${p.price_1.toLocaleString('fr-DZ')} DA
       </td>
-      <td class="price-cell" style="opacity:${p.price_2 ? 1 : 0.2}">
-        ${p.price_2
-          ? `${p.label_2 ? `<span style="font-size:11px;color:var(--c);opacity:.4">${esc(p.label_2)}</span><br>` : ''}${p.price_2.toLocaleString('fr-DZ')} DA`
-          : '—'}
+      <td class="price-cell" style="opacity:${p.price_2?1:0.2}">
+        ${p.price_2 ? `${p.label_2?`<span style="font-size:11px;color:var(--c);opacity:.4">${esc(p.label_2)}</span><br>`:''}${p.price_2.toLocaleString('fr-DZ')} DA` : '—'}
       </td>
-      <td>
-        <button class="vis-toggle ${p.visible?'on':''}" onclick="toggleVisible(${p.id},${p.visible})" title="${p.visible?'Masquer':'Afficher'}"></button>
-      </td>
+      <td><button class="vis-toggle ${p.visible?'on':''}" onclick="toggleVisible(${p.id},${p.visible})" title="${p.visible?'Masquer':'Afficher'}"></button></td>
       <td>
         <div class="action-btns">
           <button class="edit-btn" onclick="openEdit(${p.id})">Modifier</button>
           <button class="del-btn" onclick="confirmDelete(${p.id},'${esc(p.name)}')">Supprimer</button>
         </div>
       </td>
-    </tr>
-  `).join('');
-  document.getElementById('topbar-count').textContent = products.length + ' produit' + (products.length>1?'s':'');
+    </tr>`).join('');
+  }
+
+  tbody.innerHTML = html;
+  const total = STATIC_PRODUCTS.length + dynCount;
+  document.getElementById('topbar-count').textContent = total + ' produit' + (total>1?'s au total':'');
 }
 
 function renderStats(){
-  const total   = products.length;
-  const visible = products.filter(p=>p.visible).length;
+  const staticVisible = STATIC_PRODUCTS.length - hiddenIds.size;
+  const dynVisible    = dynamicProducts.filter(p=>p.visible).length;
+  const total         = STATIC_PRODUCTS.length + dynamicProducts.length;
+  const visible       = staticVisible + dynVisible;
   document.getElementById('stat-total').textContent   = total;
   document.getElementById('stat-visible').textContent = visible;
   document.getElementById('stat-hidden').textContent  = total - visible;
+}
+
+// ── TOGGLE STATIC VISIBILITY ──
+async function toggleStatic(id, isHidden){
+  try{
+    if(isHidden){
+      await sbFetch(HIDDEN_TABLE + '?product_id=eq.' + id, {method:'DELETE', prefer:'return=minimal'});
+      showToast('Produit réaffiché sur le site.','success');
+    } else {
+      await sbFetch(HIDDEN_TABLE, {method:'POST', body:JSON.stringify({product_id:id}), prefer:'return=minimal'});
+      showToast('Produit masqué du site.','success');
+    }
+    await loadAll();
+  } catch(e){
+    showToast('Erreur : ' + e.message, 'error');
+  }
 }
 
 // ── MODAL ──
@@ -640,8 +708,7 @@ function openModal(id=null){
   tags = [];
   document.getElementById('modal-title').textContent = id ? 'Modifier le produit' : 'Nouveau produit';
   document.getElementById('save-label').textContent  = id ? 'Mettre à jour' : 'Enregistrer';
-  const fields = ['name','name-ar','cat','badge','desc','long','img','label1','price1','label2','price2'];
-  fields.forEach(f => {
+  ['name','name-ar','cat','badge','desc','long','img','label1','price1','label2','price2'].forEach(f => {
     const el = document.getElementById('f-'+f);
     if(el) el.value = '';
   });
@@ -651,19 +718,19 @@ function openModal(id=null){
   document.getElementById('img-no-preview').style.display = 'flex';
 
   if(id){
-    const p = products.find(x=>x.id===id);
+    const p = dynamicProducts.find(x=>x.id===id);
     if(p){
-      document.getElementById('f-name').value     = p.name || '';
-      document.getElementById('f-name-ar').value  = p.name_ar || '';
-      document.getElementById('f-cat').value      = p.category || 'visage';
-      document.getElementById('f-badge').value    = p.badge || '';
-      document.getElementById('f-desc').value     = p.description || '';
-      document.getElementById('f-long').value     = p.long_desc || '';
-      document.getElementById('f-img').value      = p.image_url || '';
-      document.getElementById('f-label1').value   = p.label_1 || '';
-      document.getElementById('f-price1').value   = p.price_1 || '';
-      document.getElementById('f-label2').value   = p.label_2 || '';
-      document.getElementById('f-price2').value   = p.price_2 || '';
+      document.getElementById('f-name').value    = p.name || '';
+      document.getElementById('f-name-ar').value = p.name_ar || '';
+      document.getElementById('f-cat').value     = p.category || 'visage';
+      document.getElementById('f-badge').value   = p.badge || '';
+      document.getElementById('f-desc').value    = p.description || '';
+      document.getElementById('f-long').value    = p.long_desc || '';
+      document.getElementById('f-img').value     = p.image_url || '';
+      document.getElementById('f-label1').value  = p.label_1 || '';
+      document.getElementById('f-price1').value  = p.price_1 || '';
+      document.getElementById('f-label2').value  = p.label_2 || '';
+      document.getElementById('f-price2').value  = p.price_2 || '';
       if(p.tags && p.tags.length) p.tags.forEach(t => addTagValue(t));
       if(p.image_url) previewImg();
     }
@@ -675,157 +742,118 @@ function openModal(id=null){
 function openEdit(id){ openModal(id); }
 function closeModal(){
   document.getElementById('modal-ov').classList.remove('show');
-  editingId = null;
-  tags = [];
+  editingId = null; tags = [];
 }
 
 // ── TAGS ──
 function addTag(e){
-  if(e.key === 'Enter' || e.key === ','){
+  if(e.key==='Enter'||e.key===','){
     e.preventDefault();
     const v = e.target.value.trim().replace(/,$/,'');
     if(v) addTagValue(v);
-    e.target.value = '';
+    e.target.value='';
   }
 }
-function addTagValue(v){
-  if(tags.includes(v)) return;
-  tags.push(v);
-  renderTagChips();
-}
-function removeTag(v){
-  tags = tags.filter(t=>t!==v);
-  renderTagChips();
-}
-function clearTags(){
-  tags = [];
-  renderTagChips();
-}
+function addTagValue(v){ if(tags.includes(v)) return; tags.push(v); renderTagChips(); }
+function removeTag(v){ tags=tags.filter(t=>t!==v); renderTagChips(); }
+function clearTags(){ tags=[]; renderTagChips(); }
 function renderTagChips(){
-  const wrap = document.getElementById('tags-wrap');
-  const inp  = document.getElementById('tag-inp');
+  const wrap=document.getElementById('tags-wrap');
+  const inp=document.getElementById('tag-inp');
   wrap.querySelectorAll('.tag-chip').forEach(el=>el.remove());
   tags.forEach(t=>{
-    const chip = document.createElement('div');
-    chip.className = 'tag-chip';
-    chip.innerHTML = `${esc(t)}<button onclick="removeTag('${esc(t)}')" type="button">×</button>`;
-    wrap.insertBefore(chip, inp);
+    const chip=document.createElement('div');
+    chip.className='tag-chip';
+    chip.innerHTML=`${esc(t)}<button onclick="removeTag('${esc(t)}')" type="button">×</button>`;
+    wrap.insertBefore(chip,inp);
   });
 }
 
 // ── IMAGE PREVIEW ──
 function previewImg(){
-  const url = document.getElementById('f-img').value.trim();
-  const img = document.getElementById('img-preview');
-  const ph  = document.getElementById('img-no-preview');
-  if(url){
-    img.src = url;
-    img.classList.add('show');
-    ph.style.display = 'none';
-  } else {
-    img.classList.remove('show');
-    ph.style.display = 'flex';
-  }
+  const url=document.getElementById('f-img').value.trim();
+  const img=document.getElementById('img-preview');
+  const ph=document.getElementById('img-no-preview');
+  if(url){ img.src=url; img.classList.add('show'); ph.style.display='none'; }
+  else { img.classList.remove('show'); ph.style.display='flex'; }
 }
 
 // ── SAVE ──
 async function saveProduct(){
-  const name   = document.getElementById('f-name').value.trim();
-  const desc   = document.getElementById('f-desc').value.trim();
-  const price1 = parseInt(document.getElementById('f-price1').value);
-  const img    = document.getElementById('f-img').value.trim();
+  const name=document.getElementById('f-name').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const price1=parseInt(document.getElementById('f-price1').value);
+  const img=document.getElementById('f-img').value.trim();
 
   if(!name){ showToast('Le nom est obligatoire.','error'); return; }
   if(!desc){ showToast('La description est obligatoire.','error'); return; }
-  if(!price1 || price1 < 1){ showToast('Le prix du format 1 est obligatoire.','error'); return; }
+  if(!price1||price1<1){ showToast('Le prix du format 1 est obligatoire.','error'); return; }
   if(!img){ showToast("L'URL de l'image est obligatoire.",'error'); return; }
 
   const payload = {
-    name,
-    name_ar:     document.getElementById('f-name-ar').value.trim(),
-    category:    document.getElementById('f-cat').value,
-    badge:       document.getElementById('f-badge').value.trim() || null,
-    description: desc,
-    long_desc:   document.getElementById('f-long').value.trim(),
-    image_url:   img,
-    price_1:     price1,
-    label_1:     document.getElementById('f-label1').value.trim() || '30 ml',
-    price_2:     parseInt(document.getElementById('f-price2').value) || null,
-    label_2:     document.getElementById('f-label2').value.trim() || null,
-    tags,
-    visible:     true,
+    name, name_ar:document.getElementById('f-name-ar').value.trim(),
+    category:document.getElementById('f-cat').value,
+    badge:document.getElementById('f-badge').value.trim()||null,
+    description:desc, long_desc:document.getElementById('f-long').value.trim(),
+    image_url:img, price_1:price1,
+    label_1:document.getElementById('f-label1').value.trim()||'30 ml',
+    price_2:parseInt(document.getElementById('f-price2').value)||null,
+    label_2:document.getElementById('f-label2').value.trim()||null,
+    tags, visible:true,
   };
 
-  const btn     = document.getElementById('save-btn');
-  const label   = document.getElementById('save-label');
-  const spinner = document.getElementById('save-spinner');
-  btn.disabled  = true;
-  label.style.display  = 'none';
-  spinner.style.display = 'block';
+  const btn=document.getElementById('save-btn');
+  const label=document.getElementById('save-label');
+  const spinner=document.getElementById('save-spinner');
+  btn.disabled=true; label.style.display='none'; spinner.style.display='block';
 
   try{
     if(editingId){
-      await sbFetch(`${TABLE}?id=eq.${editingId}`, {
-        method:'PATCH', body: JSON.stringify(payload)
-      });
+      await sbFetch(TABLE+'?id=eq.'+editingId, {method:'PATCH', body:JSON.stringify(payload)});
       showToast('Produit mis à jour.','success');
     } else {
-      await sbFetch(TABLE, {
-        method:'POST', body: JSON.stringify(payload),
-        prefer: 'return=minimal'
-      });
+      await sbFetch(TABLE, {method:'POST', body:JSON.stringify(payload), prefer:'return=minimal'});
       showToast('Produit ajouté avec succès.','success');
     }
     closeModal();
-    await loadProducts();
+    await loadAll();
   } catch(e){
-    showToast('Erreur : ' + e.message, 'error');
+    showToast('Erreur : '+e.message,'error');
   } finally{
-    btn.disabled = false;
-    label.style.display  = 'inline';
-    spinner.style.display = 'none';
+    btn.disabled=false; label.style.display='inline'; spinner.style.display='none';
   }
 }
 
-// ── TOGGLE VISIBLE ──
-async function toggleVisible(id, current){
+// ── TOGGLE DYNAMIC VISIBLE ──
+async function toggleVisible(id,current){
   try{
-    await sbFetch(`${TABLE}?id=eq.${id}`,{
-      method:'PATCH',
-      body: JSON.stringify({visible:!current}),
-      prefer:'return=minimal'
-    });
-    await loadProducts();
-  } catch(e){
-    showToast('Erreur lors de la mise à jour.','error');
-  }
+    await sbFetch(TABLE+'?id=eq.'+id,{method:'PATCH',body:JSON.stringify({visible:!current}),prefer:'return=minimal'});
+    await loadAll();
+  } catch(e){ showToast('Erreur lors de la mise à jour.','error'); }
 }
 
-// ── DELETE ──
-function confirmDelete(id, name){
-  document.getElementById('del-name-label').textContent = `"${name}" sera définitivement supprimé.`;
+// ── DELETE DYNAMIC ──
+function confirmDelete(id,name){
+  document.getElementById('del-name-label').textContent=`"${name}" sera définitivement supprimé.`;
   document.getElementById('del-ov').classList.add('show');
-  document.getElementById('del-yes-btn').onclick = ()=>doDelete(id);
+  document.getElementById('del-yes-btn').onclick=()=>doDelete(id);
 }
 async function doDelete(id){
   document.getElementById('del-ov').classList.remove('show');
   try{
-    await sbFetch(`${TABLE}?id=eq.${id}`,{method:'DELETE',prefer:'return=minimal'});
+    await sbFetch(TABLE+'?id=eq.'+id,{method:'DELETE',prefer:'return=minimal'});
     showToast('Produit supprimé.','success');
-    await loadProducts();
-  } catch(e){
-    showToast('Erreur lors de la suppression.','error');
-  }
+    await loadAll();
+  } catch(e){ showToast('Erreur lors de la suppression.','error'); }
 }
 
 // ── TOAST ──
 let toastTimer;
-function showToast(msg, type='success'){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = `toast ${type} show`;
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'),3500);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
 // ── HELPERS ──
@@ -836,10 +864,9 @@ function catLabel(c){ return {visage:'Visage',cheveux:'Cheveux',corps:'Corps & H
 if(sessionStorage.getItem('nourya_admin')==='1'){
   document.getElementById('login-screen').classList.add('gone');
   document.getElementById('app').classList.add('show');
-  loadProducts();
+  loadAll();
 }
 
-// Close modal on overlay click
 document.getElementById('modal-ov').addEventListener('click',e=>{
   if(e.target===document.getElementById('modal-ov')) closeModal();
 });
